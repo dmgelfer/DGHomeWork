@@ -14,9 +14,9 @@ namespace DGHomeWork
         public string TasksAddMsg => ", введите новую задачу";
         public string TasksAddedMsg => ", я добавил в список запись";
         public string TasksListMsg => ", вот список актуальных задач:";
-        public string TasksRemoveMsg => ", введите номер задачи, которую нужно удалить";
+        public string TasksRemoveMsg => "Введите номер задачи, которую нужно удалить";
         public string TasksRemoveExistErrorMsg => ", я ожидаю номер существующей задачи. Попробуйте еще раз";
-        public string TasksRemoveHidenErrorMsg => ", эта задача уже была удалена ранее. Попробуйте еще раз";
+        //public string TasksRemoveHidenErrorMsg => ", эта задача уже была удалена ранее. Попробуйте еще раз";
         public string TasksRemovedMsg => ", я удалил из списка задачу";
         public string EmptyTasksListErrorMsg => ", в моем списке задач нет актуальных записей";
 

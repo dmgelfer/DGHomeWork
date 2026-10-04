@@ -8,6 +8,15 @@ namespace DGHomeWork
     {
         private static string _userName = "Незнакомец";
         private static bool _isSigned = false;
+
+        private const int _taskCountMinLimit = 1;
+        private const int _taskCountMaxLimit = 100;
+        private const int _taskLengthMinLimit = 1;
+        private const int _taskLengthMaxLimit = 100;
+
+        private static int _taskCountLimit = _taskCountMaxLimit;
+        private static int _taskLengthLimit = _taskLengthMaxLimit;
+
         private static string? _currCommand;
         private static string? _currParameter;
 
@@ -37,37 +46,63 @@ namespace DGHomeWork
 
             do
             {
-                (_currCommand, _currParameter) = ParseCommand(Convert.ToString(GetUserInput()));
-
-                switch (_currCommand)
+                try
                 {
-                    case "/start":
-                        StartCommand();
-                        break;
-                    case "/help":
-                        HelpCommand();
-                        break;
-                    case "/info":
-                        InfoCommand();
-                        break;
-                    case "/echo":
-                        EchoCommand();
-                        break;
-                    case "/addtask":
-                        AddTaskCommand();
-                        break;
-                    case "/showtasks":
-                        ShowTasksCommand();
-                        break;
-                    case "/removetask":
-                        RemoveTaskCommand();
-                        break;
-                    case "/exit":
-                        ExitCommand();
-                        break;
-                    default:
-                        UnknownCommand();
-                        break;
+                    (_currCommand, _currParameter) = SeparateInput(Convert.ToString(GetUserInput()));
+
+                    switch (_currCommand)
+                    {
+                        case "/start":
+                            StartCommand();
+                            break;
+                        case "/help":
+                            HelpCommand();
+                            break;
+                        case "/info":
+                            InfoCommand();
+                            break;
+                        case "/echo":
+                            EchoCommand();
+                            break;
+                        case "/addtask":
+                            AddTaskCommand();
+                            break;
+                        case "/showtasks":
+                            ShowTasksCommand();
+                            break;
+                        case "/removetask":
+                            RemoveTaskCommand();
+                            break;
+                        case "/exit":
+                            ExitCommand();
+                            break;
+                        default:
+                            UnknownCommand();
+                            break;
+                    }
+                }
+                catch (ArgumentException ex)
+                {
+                    Console.WriteLine($"Сообщение: {ex.Message}");
+                }
+                catch (TaskCountLimitException ex)
+                {
+                    Console.WriteLine($"Сообщение: {ex.Message}");
+                }
+                catch (TaskLengthLimitException ex)
+                {
+                    Console.WriteLine($"Сообщение: {ex.Message}");
+                }
+                catch (DuplicateTaskException ex)
+                {
+                    Console.WriteLine($"Сообщение: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Произошла непредвиденная ошибка: {ex.GetType().Name}");
+                    Console.WriteLine($"Сообщение: {ex.Message}");
+                    Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                    Console.WriteLine($"InnerException: {ex.InnerException?.Message ?? "нет"}");
                 }
 
             } while (_currCommand != "/exit");
@@ -98,7 +133,7 @@ namespace DGHomeWork
             return userUnput;
         }
 
-        private static (string, string) ParseCommand(string? input)
+        private static (string, string) SeparateInput(string? input)
         {
             if (string.IsNullOrWhiteSpace(input))
             {
@@ -127,6 +162,10 @@ namespace DGHomeWork
 
             _isSigned = true;
             _commandsTxt = GenerateCommandsTxt();
+
+            SetTaskCountLimit();
+            SetTaskLengthLimit();
+
             HelpCommand();
         }
 
@@ -163,6 +202,27 @@ namespace DGHomeWork
                 Console.WriteLine($"{_userName}{_currentBot.TasksAddMsg}");
 
                 string input = Convert.ToString(GetUserInput());
+                
+                if (_tasks.Count == _taskCountLimit)
+                {
+                    throw new TaskCountLimitException(_taskCountLimit);
+                }
+                
+                if (input.Length > _taskLengthLimit)
+                {
+                    throw new TaskLengthLimitException(input.Length, _taskLengthLimit);
+                }
+                
+                foreach (var task in _tasks)
+                {
+                    if (task == input)
+                    {
+                        throw new DuplicateTaskException(input);
+                    }
+                }
+
+                ValidateString(input);
+
                 _tasks.Add(input);
 
                 Console.WriteLine($"{_userName}{_currentBot.TasksAddedMsg} {input}");
@@ -229,9 +289,74 @@ namespace DGHomeWork
         {
             Console.WriteLine($"{_userName}{_currentBot.ExitMsg}");
         }
+
         private static void UnknownCommand()
         {
             Console.WriteLine($"{_userName}{_currentBot.UnknownCommandErrorMsg}{_commandsTxt}");
+        }
+
+        private static void SetTaskCountLimit()
+        {
+            while (true)
+            {
+                Console.WriteLine($"{_currentBot.TaskCountLimitMsg}");
+                try
+                {
+                    ParseAndValidateInt(GetUserInput(), _taskCountMinLimit, _taskCountMaxLimit);
+                    return;
+                }
+                catch (ArgumentException ex)
+                {
+                    Console.WriteLine($"Исключение: {ex.Message}");
+                }
+            }
+        }
+
+        private static void SetTaskLengthLimit()
+        {
+            while (true)
+            {
+                Console.WriteLine($"{_currentBot.TaskLengthLimitMsg}");
+                try
+                {
+                    ParseAndValidateInt(GetUserInput(), _taskLengthMinLimit, _taskLengthMaxLimit);
+                    return;
+                }
+                catch (ArgumentException ex)
+                {
+                    Console.WriteLine($"Исключение: {ex.Message}");
+                }
+            }
+        }
+
+        private static int ParseAndValidateInt(string? str, int min, int max)
+        {
+            if (int.TryParse(str, out int number)
+                        && number >= min
+                        && number <= max)
+            {
+                return number;
+            }
+
+            throw new ArgumentException($"Это должно быть число от {min} до {max}");
+        }
+
+        private static void ValidateString(string? str)
+        {
+            if (str == null)
+            {
+                throw new ArgumentException("Строка не может быть null");
+            }
+                
+            if (str.Length == 0)
+            {
+                throw new ArgumentException("Строка не может быть пустой");
+            }
+
+            if (string.IsNullOrWhiteSpace(str))
+            {
+                throw new ArgumentException("Строка должна содержать символы, помимо пробелов");
+            }
         }
     }
 }

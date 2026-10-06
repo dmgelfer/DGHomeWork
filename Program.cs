@@ -14,8 +14,8 @@ namespace DGHomeWork
         private const int _taskLengthMinLimit = 1;
         private const int _taskLengthMaxLimit = 100;
 
-        private static int _taskCountLimit = _taskCountMaxLimit;
-        private static int _taskLengthLimit = _taskLengthMaxLimit;
+        private static int _taskCountLimit;
+        private static int _taskLengthLimit;
 
         private static string? _currCommand;
         private static string? _currParameter;
@@ -40,8 +40,13 @@ namespace DGHomeWork
 
         public static void Main()
         {
-            _commandsTxt = GenerateCommandsTxt();
+            
             Console.ForegroundColor = ConsoleColor.Green;
+
+            SetTaskCountLimit();
+            SetTaskLengthLimit();
+
+            _commandsTxt = GenerateCommandsTxt();
             Console.WriteLine($"{_currentBot.HelloMsg}{_commandsTxt}");
 
             do
@@ -163,9 +168,6 @@ namespace DGHomeWork
             _isSigned = true;
             _commandsTxt = GenerateCommandsTxt();
 
-            SetTaskCountLimit();
-            SetTaskLengthLimit();
-
             HelpCommand();
         }
 
@@ -203,7 +205,7 @@ namespace DGHomeWork
 
                 string input = Convert.ToString(GetUserInput());
                 
-                if (_tasks.Count == _taskCountLimit)
+                if (_tasks.Count >= _taskCountLimit)
                 {
                     throw new TaskCountLimitException(_taskCountLimit);
                 }
@@ -212,13 +214,10 @@ namespace DGHomeWork
                 {
                     throw new TaskLengthLimitException(input.Length, _taskLengthLimit);
                 }
-                
-                foreach (var task in _tasks)
+
+                if (_tasks.Contains(input))
                 {
-                    if (task == input)
-                    {
-                        throw new DuplicateTaskException(input);
-                    }
+                    throw new DuplicateTaskException(input);
                 }
 
                 ValidateString(input);

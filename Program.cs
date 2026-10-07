@@ -301,7 +301,7 @@ namespace DGHomeWork
                 Console.WriteLine($"{_currentBot.TaskCountLimitMsg}");
                 try
                 {
-                    ParseAndValidateInt(GetUserInput(), _taskCountMinLimit, _taskCountMaxLimit);
+                    _taskCountLimit = ParseAndValidateInt(GetUserInput(), _taskCountMinLimit, _taskCountMaxLimit);
                     return;
                 }
                 catch (ArgumentException ex)
@@ -318,7 +318,7 @@ namespace DGHomeWork
                 Console.WriteLine($"{_currentBot.TaskLengthLimitMsg}");
                 try
                 {
-                    ParseAndValidateInt(GetUserInput(), _taskLengthMinLimit, _taskLengthMaxLimit);
+                    _taskLengthLimit = ParseAndValidateInt(GetUserInput(), _taskLengthMinLimit, _taskLengthMaxLimit);
                     return;
                 }
                 catch (ArgumentException ex)

@@ -15,11 +15,12 @@ namespace DGHomeWork
         public string UnknownCommandErrorMsg => ", прошу прощения. Эту команду я еще не выучил. Вот перечень доступных команд:\n";
         public string TasksAddMsg => ", введите новую задачу";
         public string TasksAddedMsg => ", я добавил в список запись";
-        public string TasksListMsg => ", вот список актуальных задач:";
+        public string TasksListMsg => ", вот список задач по вашему запросу:";
         public string TasksRemoveMsg => "Введите номер задачи, которую нужно удалить";
         public string TasksRemoveExistErrorMsg => ", я ожидаю номер существующей задачи. Попробуйте еще раз";
+        public string TasksCompletedMsg => ", я отметил как выполненную задачу ";
         public string TasksRemovedMsg => ", я удалил из списка задачу";
-        public string EmptyTasksListErrorMsg => ", в моем списке задач нет актуальных записей";
+        public string EmptyTasksListErrorMsg => ", в моем списке задач нет записей по вашему запросу";
 
         public string ExitMsg => ", с вами было приятно поработать. Всего доброго.";
     }

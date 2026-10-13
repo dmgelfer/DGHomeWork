@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DGHomeWork
 {
     public class Program
     {
-        private static string _userName = "Незнакомец";
+        private static ToDoUser _user = new("Незнакомец");
         private static bool _isSigned = false;
 
         private const int _taskCountMinLimit = 1;
@@ -16,6 +17,8 @@ namespace DGHomeWork
 
         private static int _taskCountLimit;
         private static int _taskLengthLimit;
+
+        private static int _activeTasksCount = 0;
 
         private static string? _currCommand;
         private static string? _currParameter;
@@ -27,14 +30,16 @@ namespace DGHomeWork
                 new("/info", "Информация о боте", true),
                 new("/echo", "Повторяю все, что будет введено после пробела", false),
                 new("/addtask", "Добавить задачу в список", false),
-                new("/showtasks", "Показать все задачи из списка", false),
+                new("/showtasks", "Показать только активные задачи из списка", false),
+                new("/showalltasks", "Показать все задачи из списка", false),
+                new("/completetask", "Отметить задачу из списка выполненной", false),
                 new("/removetask", "Удалить задачу из списка", false),
                 new("/exit", "Завершение работы", true),
         ];
         
         private static string? _commandsTxt;
 
-        private static List<string> _tasks = [];
+        private static List<ToDoItem> _tasks = [];
 
         private static BotBehavior _currentBot = new();
 
@@ -74,6 +79,12 @@ namespace DGHomeWork
                             break;
                         case "/showtasks":
                             ShowTasksCommand();
+                            break;
+                        case "/showalltasks":
+                            ShowAllTasksCommand();
+                            break;
+                        case "/completetask":
+                            CompleteTaskCommand();
                             break;
                         case "/removetask":
                             RemoveTaskCommand();
@@ -163,7 +174,7 @@ namespace DGHomeWork
                 Console.WriteLine($"{_currentBot.SignedStartMsg}");
             }
 
-            _userName = Convert.ToString(GetUserInput());
+            _user.SetNewName(Convert.ToString(GetUserInput()));
 
             _isSigned = true;
             _commandsTxt = GenerateCommandsTxt();
@@ -173,19 +184,19 @@ namespace DGHomeWork
 
         private static void HelpCommand()
         {
-            Console.WriteLine($"{_userName}{_currentBot.HelpMsg}{_commandsTxt}");
+            Console.WriteLine($"{_user.TelegramUserName}{_currentBot.HelpMsg}{_commandsTxt}");
         }
 
         private static void InfoCommand()
         {
-            Console.WriteLine($"{_userName}{_currentBot.InfoMsg}");
+            Console.WriteLine($"{_user.TelegramUserName}{_currentBot.InfoMsg}");
         }
 
         private static void EchoCommand()
         {
             if (!_isSigned)
             {
-                Console.WriteLine($"{_userName}{_currentBot.UnsignedErrorMsg}");
+                Console.WriteLine($"{_user.TelegramUserName}{_currentBot.UnsignedErrorMsg}");
             }
             else
             {
@@ -197,14 +208,16 @@ namespace DGHomeWork
         {
             if (!_isSigned)
             {
-                Console.WriteLine($"{_userName}{_currentBot.UnsignedErrorMsg}");
+                Console.WriteLine($"{_user.TelegramUserName}{_currentBot.UnsignedErrorMsg}");
             }
             else
             {
-                Console.WriteLine($"{_userName}{_currentBot.TasksAddMsg}");
+                Console.WriteLine($"{_user.TelegramUserName}{_currentBot.TasksAddMsg}");
 
                 string input = Convert.ToString(GetUserInput());
-                
+
+                ValidateString(input);
+
                 if (_tasks.Count >= _taskCountLimit)
                 {
                     throw new TaskCountLimitException(_taskCountLimit);
@@ -215,16 +228,18 @@ namespace DGHomeWork
                     throw new TaskLengthLimitException(input.Length, _taskLengthLimit);
                 }
 
-                if (_tasks.Contains(input))
+                foreach (var task in _tasks)
                 {
-                    throw new DuplicateTaskException(input);
+                    if (task.ItemName == input)
+                    {
+                        throw new DuplicateTaskException(input);
+                    }
                 }
 
-                ValidateString(input);
+                _tasks.Add(new ToDoItem(_user, input));
+                _activeTasksCount++;
 
-                _tasks.Add(input);
-
-                Console.WriteLine($"{_userName}{_currentBot.TasksAddedMsg} {input}");
+                Console.WriteLine($"{_user.TelegramUserName}{_currentBot.TasksAddedMsg} {input}");
             }
         }
 
@@ -232,22 +247,72 @@ namespace DGHomeWork
         {
             if (!_isSigned)
             {
-                Console.WriteLine($"{_userName}{_currentBot.UnsignedErrorMsg}");
+                Console.WriteLine($"{_user.TelegramUserName}{_currentBot.UnsignedErrorMsg}");
+            }
+            else
+            {
+                if (_activeTasksCount > 0)
+                {
+                    Console.WriteLine($"{_user.TelegramUserName}{_currentBot.TasksListMsg}");
+
+                    for (int i = 0; i < _tasks.Count; i++)
+                    {
+                        if (_tasks[i].State == ToDoItemState.Active)
+                        {
+                            Console.WriteLine($"{i + 1}. {_tasks[i].ItemName} - {_tasks[i].CreatedAt} - {_tasks[i].ItemId}");
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"{_user.TelegramUserName}{_currentBot.EmptyTasksListErrorMsg}");
+                }
+            }
+        }
+
+        private static void ShowAllTasksCommand()
+        {
+            if (!_isSigned)
+            {
+                Console.WriteLine($"{_user.TelegramUserName}{_currentBot.UnsignedErrorMsg}");
             }
             else
             {
                 if (_tasks.Count > 0)
                 {
-                    Console.WriteLine($"{_userName}{_currentBot.TasksListMsg}");
+                    Console.WriteLine($"{_user.TelegramUserName}{_currentBot.TasksListMsg}");
 
                     for (int i = 0; i < _tasks.Count; i++)
                     {
-                        Console.WriteLine($"{i+1}. {_tasks[i]}");
+                        Console.WriteLine($"{i + 1}. ({_tasks[i].State}) {_tasks[i].ItemName} - {_tasks[i].CreatedAt} - {_tasks[i].ItemId}");
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"{_userName}{_currentBot.EmptyTasksListErrorMsg}");
+                    Console.WriteLine($"{_user.TelegramUserName}{_currentBot.EmptyTasksListErrorMsg}");
+                }
+            }
+        }
+
+        private static void CompleteTaskCommand()
+        {
+            if (!_isSigned)
+            {
+                Console.WriteLine($"{_user.TelegramUserName}{_currentBot.UnsignedErrorMsg}");
+            }
+            else
+            {
+                if (Guid.TryParse(_currParameter, out Guid itemIdToComplete))
+                {
+                    foreach (var task in _tasks)
+                    {
+                        if (task.ItemId == itemIdToComplete)
+                        {
+                            Console.WriteLine($"{_user.TelegramUserName}{_currentBot.TasksCompletedMsg} {task.ItemName}");
+                            task.Complete();
+                            _activeTasksCount--;
+                        }
+                    }
                 }
             }
         }
@@ -256,11 +321,11 @@ namespace DGHomeWork
         {
             if (!_isSigned)
             {
-                Console.WriteLine($"{_userName}{_currentBot.UnsignedErrorMsg}");
+                Console.WriteLine($"{_user.TelegramUserName}{_currentBot.UnsignedErrorMsg}");
             }
             else
             {
-                ShowTasksCommand();
+                ShowAllTasksCommand();
 
                 if (_tasks.Count > 0)
                 {
@@ -271,13 +336,22 @@ namespace DGHomeWork
 
                         if (int.TryParse(input, out int number) && number > 0 && number <= _tasks.Count)
                         {
-                            Console.WriteLine($"{_userName}{_currentBot.TasksRemovedMsg} {_tasks[number - 1]}");
+                            Console.WriteLine($"{_user.TelegramUserName}{_currentBot.TasksRemovedMsg} {_tasks[number - 1].ItemName}");
                             _tasks.RemoveAt(number - 1);
+
+                            _activeTasksCount = 0;
+                            foreach (var task in _tasks)
+                            { 
+                                if (task.State == ToDoItemState.Active)
+                                {
+                                    _activeTasksCount++;
+                                }
+                            }
                             break;
                         }
                         else
                         {
-                            Console.WriteLine($"{_userName}{_currentBot.TasksRemoveExistErrorMsg}");
+                            Console.WriteLine($"{_user.TelegramUserName}{_currentBot.TasksRemoveExistErrorMsg}");
                         }
                     } while (true);
                 }
@@ -286,12 +360,12 @@ namespace DGHomeWork
 
         private static void ExitCommand()
         {
-            Console.WriteLine($"{_userName}{_currentBot.ExitMsg}");
+            Console.WriteLine($"{_user.TelegramUserName}{_currentBot.ExitMsg}");
         }
 
         private static void UnknownCommand()
         {
-            Console.WriteLine($"{_userName}{_currentBot.UnknownCommandErrorMsg}{_commandsTxt}");
+            Console.WriteLine($"{_user.TelegramUserName}{_currentBot.UnknownCommandErrorMsg}{_commandsTxt}");
         }
 
         private static void SetTaskCountLimit()

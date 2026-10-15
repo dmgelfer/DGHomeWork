@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -58,7 +59,7 @@ namespace DGHomeWork
             {
                 try
                 {
-                    (_currCommand, _currParameter) = SeparateInput(Convert.ToString(GetUserInput()));
+                    (_currCommand, _currParameter) = SeparateInput(GetUserInput());
 
                     switch (_currCommand)
                     {
@@ -174,7 +175,7 @@ namespace DGHomeWork
                 Console.WriteLine($"{_currentBot.SignedStartMsg}");
             }
 
-            _user.SetNewName(Convert.ToString(GetUserInput()));
+            _user.SetNewName(GetUserInput());
 
             _isSigned = true;
             _commandsTxt = GenerateCommandsTxt();
@@ -214,7 +215,7 @@ namespace DGHomeWork
             {
                 Console.WriteLine($"{_user.TelegramUserName}{_currentBot.TasksAddMsg}");
 
-                string input = Convert.ToString(GetUserInput());
+                string input = GetUserInput();
 
                 ValidateString(input);
 
@@ -304,13 +305,19 @@ namespace DGHomeWork
             {
                 if (Guid.TryParse(_currParameter, out Guid itemIdToComplete))
                 {
-                    foreach (var task in _tasks)
+                    var task = _tasks.FirstOrDefault(t => t.ItemId == itemIdToComplete);
+
+                    if (task!.ItemId == itemIdToComplete)
                     {
-                        if (task.ItemId == itemIdToComplete)
+                        if (task!.State != ToDoItemState.Completed)
                         {
                             Console.WriteLine($"{_user.TelegramUserName}{_currentBot.TasksCompletedMsg} {task.ItemName}");
                             task.Complete();
                             _activeTasksCount--;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"{_user.TelegramUserName}{_currentBot.TasksCompletedMsg} {task.ItemName} еще раз");
                         }
                     }
                 }
@@ -332,7 +339,7 @@ namespace DGHomeWork
                     Console.WriteLine($"{_currentBot.TasksRemoveMsg}");
                     do
                     {
-                        string? input = Convert.ToString(GetUserInput());
+                        string? input = GetUserInput();
 
                         if (int.TryParse(input, out int number) && number > 0 && number <= _tasks.Count)
                         {

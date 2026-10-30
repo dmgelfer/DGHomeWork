@@ -15,17 +15,16 @@ namespace DGHomeWork
 
         public static void Main()
         {
+            Console.ForegroundColor = ConsoleColor.Green;
+
+            SetTaskCountLimit();
+            SetTaskLengthLimit();
+
             while (true)
             {
+                Console.ForegroundColor = ConsoleColor.White;
                 try
                 {
-                    Console.ForegroundColor = ConsoleColor.Green;
-
-                    SetTaskCountLimit();
-                    SetTaskLengthLimit();
-
-                    Console.ForegroundColor = ConsoleColor.White;
-
                     var botClient = new ConsoleBotClient();
                     var userService = new UserService();
                     var toDoService = new ToDoService(_taskCountLimit, _taskLengthLimit);

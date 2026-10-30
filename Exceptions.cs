@@ -25,4 +25,12 @@ namespace DGHomeWork
         {
         }
     }
+
+    public class TaskNotFoundException : Exception
+    {
+        public TaskNotFoundException(Guid id)
+            : base($"Задача ‘{id}’ не найдена или не существует")
+        {
+        }
+    }
 }

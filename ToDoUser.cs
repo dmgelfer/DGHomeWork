@@ -2,16 +2,10 @@
 
 namespace DGHomeWork
 {
-    public class ToDoUser(string name)
+    public class ToDoUser(long telegramUserId, string telegramUserName)
     {
-        public Guid UserId { get; } = Guid.NewGuid();
-        public string TelegramUserName { get; private set; } = name;
-        public DateTime RegisteredAt { get; private set; }
-
-        public void SetNewName(string name)
-        {
-            TelegramUserName = name;
-            RegisteredAt = DateTime.UtcNow;
-        }
+        public long TelegramUserId { get; } = telegramUserId;
+        public string TelegramUserName { get; } = telegramUserName;
+        public DateTime RegisteredAt { get; } = DateTime.UtcNow;
     }
 }

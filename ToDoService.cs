@@ -4,30 +4,30 @@ using System.Linq;
 
 namespace DGHomeWork
 {
-    public class ToDoService : IToDoService
+    public class ToDoService (int taskCountLimit, int taskLengthLimit): IToDoService
     {
-        private const int TaskCountLimit = 10;
-        private const int TaskLengthLimit = 20;
+        public int TaskCountLimit { get; } = taskCountLimit;
+        public int TaskLengthLimit { get; } = taskLengthLimit;
 
         private readonly List<ToDoItem> _tasks = [];
         private readonly object _lock = new();
 
-        private IEnumerable<ToDoItem> UserTasks(long telegramUserId)
+        private IEnumerable<ToDoItem> UserTasks(Guid userId)
         {
             lock (_lock)
             {
-                return [.. _tasks.Where(t => t.ItemUser.TelegramUserId == telegramUserId)];
+                return [.. _tasks.Where(t => t.ItemUser.Id == userId)];
             }
         }
 
-        public IReadOnlyList<ToDoItem> GetAllByUserId(long telegramUserId)
+        public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
         {
-            return [.. UserTasks(telegramUserId)];
+            return [.. UserTasks(userId)];
         }
 
-        public IReadOnlyList<ToDoItem> GetActiveByUserId(long telegramUserId)
+        public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
         {
-            return [.. UserTasks(telegramUserId).Where(t => t.State == ToDoItemState.Active)];
+            return [.. UserTasks(userId).Where(t => t.State == ToDoItemState.Active)];
         }
 
         public ToDoItem Add(ToDoUser user, string name)
@@ -53,31 +53,25 @@ namespace DGHomeWork
             }
         }
         
-        public void MarkCompleted(ToDoUser user, Guid id)
+        public void MarkCompleted(Guid id)
         {
             lock (_lock)
             {
                 var task = _tasks.FirstOrDefault(t => t.ItemId == id)
                     ?? throw new TaskNotFoundException(id);
 
-                if (task.ItemUser.TelegramUserId == user.TelegramUserId)
-                {
-                    task.Complete();
-                }
+                task.Complete();
             }
         }
 
-        public void Delete(ToDoUser user, Guid id)
+        public void Delete(Guid id)
         {
             lock (_lock)
             {
                 var task = _tasks.FirstOrDefault(t => t.ItemId == id)
                     ?? throw new TaskNotFoundException(id);
 
-                if (task.ItemUser.TelegramUserId == user.TelegramUserId)
-                {
-                    _tasks.Remove(task);
-                }
+                _tasks.Remove(task);
             }
         }
     }

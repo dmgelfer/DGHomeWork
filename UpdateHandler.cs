@@ -2,7 +2,6 @@
 using Otus.ToDoList.ConsoleBot.Types;
 using System;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace DGHomeWork
 {
@@ -26,47 +25,40 @@ namespace DGHomeWork
 
         public void HandleUpdateAsync(ITelegramBotClient botClient, Update update)
         {
-            try
-            {
-                (var currCommand, var currParameter) = SeparateInput(update.Message.Text);
+            (var currCommand, var currParameter) = SeparateInput(update.Message.Text);
 
-                switch (currCommand)
-                {
-                    case "/start":
-                        StartCommand(botClient, update);
-                        break;
-                    case "/help":
-                        HelpCommand(botClient, update);
-                        break;
-                    case "/info":
-                        InfoCommand(botClient, update);
-                        break;
-                    case "/addtask":
-                        AddTaskCommand(botClient, update, currParameter);
-                        break;
-                    case "/showtasks":
-                        ShowTasksCommand(botClient, update);
-                        break;
-                    case "/showalltasks":
-                        ShowAllTasksCommand(botClient, update);
-                        break;
-                    case "/completetask":
-                        CompleteTaskCommand(botClient, update, currParameter);
-                        break;
-                    case "/removetask":
-                        RemoveTaskCommand(botClient, update, currParameter);
-                        break;
-                    case "/exit":
-                        //ExitCommand();
-                        break;
-                    default:
-                        UnknownCommand(botClient, update);
-                        break;
-                }
-            }
-            catch (Exception ex)
+            switch (currCommand)
             {
-                botClient.SendMessage(update.Message.Chat, $"Произошла непредвиденная ошибка: {ex.GetType().Name}");
+                case "/start":
+                    StartCommand(botClient, update);
+                    break;
+                case "/help":
+                    HelpCommand(botClient, update);
+                    break;
+                case "/info":
+                    InfoCommand(botClient, update);
+                    break;
+                case "/addtask":
+                    AddTaskCommand(botClient, update, currParameter);
+                    break;
+                case "/showtasks":
+                    ShowTasksCommand(botClient, update);
+                    break;
+                case "/showalltasks":
+                    ShowAllTasksCommand(botClient, update);
+                    break;
+                case "/completetask":
+                    CompleteTaskCommand(botClient, update, currParameter);
+                    break;
+                case "/removetask":
+                    RemoveTaskCommand(botClient, update, currParameter);
+                    break;
+                case "/exit":
+                    ExitCommand();
+                    break;
+                default:
+                    UnknownCommand(botClient, update);
+                    break;
             }
         }
 
@@ -102,13 +94,13 @@ namespace DGHomeWork
 
         private void StartCommand(ITelegramBotClient botClient, Update update)
         {
-            var userId = update.Message.From.Id;
-            var user = _userService.GetUser(userId);
+            var telegramUserId = update.Message.From.Id;
+            var user = _userService.GetUser(telegramUserId);
             var userName = update.Message.From.Username ?? "Незнакомец";
 
             if (user == null)
             {
-                _userService.RegisterUser(userId, userName);
+                _userService.RegisterUser(telegramUserId, userName);
                 botClient.SendMessage(update.Message.Chat, $"Зарегистрировал пользователя'{userName}'.");
             }
             else
@@ -121,8 +113,8 @@ namespace DGHomeWork
 
         private void HelpCommand(ITelegramBotClient botClient, Update update)
         {
-            var userId = update.Message.From.Id;
-            var user = _userService.GetUser(userId);
+            var telegramUserId = update.Message.From.Id;
+            var user = _userService.GetUser(telegramUserId);
             var userName = update.Message.From.Username ?? "Незнакомец";
 
             botClient.SendMessage(update.Message.Chat, $"{userName}, вот перечень доступных команд:\n{GenerateCommandsTxt(user != null)}");
@@ -130,8 +122,8 @@ namespace DGHomeWork
 
         private void InfoCommand(ITelegramBotClient botClient, Update update)
         {
-            var userId = update.Message.From.Id;
-            var user = _userService.GetUser(userId);
+            var telegramUserId = update.Message.From.Id;
+            var user = _userService.GetUser(telegramUserId);
             var userName = update.Message.From.Username ?? "Незнакомец";
 
             botClient.SendMessage(update.Message.Chat, $"{userName}, я бот v.01.{DateTime.Today:yyyy} создан {DateTime.Today:dd.MM.yyyy}.");
@@ -139,8 +131,8 @@ namespace DGHomeWork
 
         private void UnknownCommand(ITelegramBotClient botClient, Update update)
         {
-            var userId = update.Message.From.Id;
-            var user = _userService.GetUser(userId);
+            var telegramUserId = update.Message.From.Id;
+            var user = _userService.GetUser(telegramUserId);
             var userName = update.Message.From.Username ?? "Незнакомец";
 
             botClient.SendMessage(update.Message.Chat, $"{userName}, прошу прощения. Эту команду я еще не выучил.\nВот перечень доступных команд:\n{GenerateCommandsTxt(user != null)}");
@@ -148,14 +140,21 @@ namespace DGHomeWork
 
         private void AddTaskCommand(ITelegramBotClient botClient, Update update, string currTask)
         {
-            var userId = update.Message.From.Id;
-            var user = _userService.GetUser(userId);
+            var telegramUserId = update.Message.From.Id;
+            var user = _userService.GetUser(telegramUserId);
             var userName = update.Message.From.Username ?? "Незнакомец";
 
             if (user != null)
             {
-                _toDoService.Add(user, currTask);
-                botClient.SendMessage(update.Message.Chat, $"{userName}, я добавил задачу '{currTask}'");
+                if (!string.IsNullOrWhiteSpace(currTask))
+                {
+                    _toDoService.Add(user, currTask);
+                    botClient.SendMessage(update.Message.Chat, $"{userName}, я добавил задачу '{currTask}'");
+                }
+                else
+                {
+                    botClient.SendMessage(update.Message.Chat, $"{userName}, я не могу добавить задачу без описания");
+                }
             }
             else
             {
@@ -165,14 +164,14 @@ namespace DGHomeWork
 
         private void ShowTasksCommand(ITelegramBotClient botClient, Update update)
         {
-            var userId = update.Message.From.Id;
-            var user = _userService.GetUser(userId);
-            var userName = update.Message.From.Username ?? "Незнакомец";
+            var telegramUserId = update.Message.From.Id;
+            var user = _userService.GetUser(telegramUserId);
+            var userName = user?.TelegramUserName ?? "Незнакомец";
 
             if (user != null)
             {
                 StringBuilder stringBuilder = new();
-                var tasks = _toDoService.GetActiveByUserId(userId);
+                var tasks = _toDoService.GetActiveByUserId(user.Id);
 
                 if (tasks.Count > 0)
                 {
@@ -196,14 +195,14 @@ namespace DGHomeWork
 
         private void ShowAllTasksCommand(ITelegramBotClient botClient, Update update)
         {
-            var userId = update.Message.From.Id;
-            var user = _userService.GetUser(userId);
-            var userName = update.Message.From.Username ?? "Незнакомец";
+            var telegramUserId = update.Message.From.Id;
+            var user = _userService.GetUser(telegramUserId);
+            var userName = user?.TelegramUserName ?? "Незнакомец";
 
             if (user != null)
             {
                 StringBuilder stringBuilder = new();
-                var tasks = _toDoService.GetAllByUserId(userId);
+                var tasks = _toDoService.GetAllByUserId(user.Id);
 
                 if (tasks.Count > 0)
                 {
@@ -235,7 +234,7 @@ namespace DGHomeWork
             {
                 if (Guid.TryParse(taskID, out Guid itemIdToComplete))
                 {
-                    _toDoService.MarkCompleted(user, itemIdToComplete);
+                    _toDoService.MarkCompleted(itemIdToComplete);
                     botClient.SendMessage(update.Message.Chat, $"{userName}, я пометил задачу '{taskID}' как выполненную");
                 }
                 else
@@ -259,7 +258,7 @@ namespace DGHomeWork
             {
                 if (Guid.TryParse(taskID, out Guid itemIdToComplete))
                 {
-                    _toDoService.Delete(user, itemIdToComplete);
+                    _toDoService.Delete(itemIdToComplete);
                     botClient.SendMessage(update.Message.Chat, $"{userName}, я удалил задачу '{taskID}'");
                 }
                 else
@@ -271,6 +270,11 @@ namespace DGHomeWork
             {
                 UnknownCommand(botClient, update);
             }
+        }
+
+        private void ExitCommand()
+        {
+            Environment.Exit(0);
         }
     }
 }
